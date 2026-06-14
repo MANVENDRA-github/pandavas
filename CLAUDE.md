@@ -31,31 +31,46 @@ an agent.
 
 ## SCOPE LOCK — read before writing anything
 
-- **Work is limited to P0 / v0 only** (see `docs/SPEC.md` §10).
-- **Do not implement P1, P2, or P3 features** unless the user explicitly says
-  "lift the scope lock."
-- P0 deliverable, and nothing beyond it:
-  - A deterministic **executor**: detect + run the local test command, capture
-    red/green.
-  - A **LangGraph orchestrator loop** wired to **stub agents** (the agents return
-    placeholder output for now — real agent logic is P1+).
-  - **One trivial bug fixed end-to-end** on one local repo, manual invocation.
-- If a task seems to require P1+ work, **stop and ask** — do not quietly expand
-  scope.
+- **P0 / v0 is COMPLETE** (see `docs/SPEC.md` §10): deterministic executor,
+  LangGraph orchestrator loop wired to stub agents, CLI, and one trivial bug
+  fixed end-to-end on a local repo.
+- **P1 is COMPLETE:** real **Nakula** (research + anchored typed brief +
+  deterministic resolve gate), real **Arjuna** (worker + path-safe edits), and a
+  real verification loop end-to-end. The **Judge (Sahadeva) is still a stub.**
+- **Active phase: P2.** In scope, and nothing beyond it:
+  - **Real Bhima rigor:** baseline test run, **red→green** confirmation for the
+    reproduction test, and **regression detection** (a previously-passing test
+    that now fails is rejected). Per-test result parsing is **pytest-first** (via
+    JUnit XML); non-pytest commands fall back to **exit-code-only**.
+    (Multi-framework per-test parsing stays P3.)
+  - **Real Sahadeva judge:** replace the stub with an LLM that reviews the change
+    diff + test results against `acceptance_criteria`, validates that any
+    agent-written test is **non-vacuous** (adequacy / anti-gaming), and returns
+    **approve** OR **reject with specific, actionable feedback tied to anchors**.
+  - **Convergence control:** oscillation detection (the same test fails twice
+    after a "fix," or the diff churns the same lines → break early) and
+    **best-attempt tracking** so the cap returns the best result, labeled
+    honestly.
+- **P3 stays LOCKED:** reproducibility hardening, multi-framework / multi-language
+  per-test parsing, CLI/UX polish, and client setup docs.
+- **Do not implement P3 features** unless the user explicitly says "lift the
+  scope lock." If a task seems to require P3 work, **stop and ask** — do not
+  quietly expand scope.
 
 ## Build order (non-negotiable)
 
-> Skeleton first, muscle later.
+> Deterministic gate before the stochastic part. Prove before polish.
 
-1. Executor (test-command detection + run + red/green capture).
-2. Orchestrator loop (LangGraph) wired to stub agents.
-3. One trivial task end-to-end (research → worker → test → judge, all stubbed
-   except the executor).
-4. **Only then** flesh out individual agents — and only when the scope lock is
-   lifted.
+1. **Diff capture** — deterministically capture the change diff for the judge.
+2. **Real Sahadeva judge** — diff + test results vs acceptance_criteria,
+   adequacy check, approve / reject-with-anchored-feedback.
+3. **Bhima per-test rigor** — baseline, red→green, regression detection
+   (pytest-first via JUnit XML; exit-code-only fallback).
+4. **Oscillation + best-attempt-at-cap** — break early on churn/repeats; return
+   the best attempt, labeled honestly.
 
-Do not start by polishing agent prompts. The riskiest piece is execution; prove
-it first.
+Do not start by polishing agent prompts. Prove each piece end-to-end before
+moving to the next.
 
 ---
 
