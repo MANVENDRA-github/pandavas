@@ -6,10 +6,6 @@ the task, walk away. It researches the code, writes the change, verifies it
 against tests, has an independent agent judge it, and loops until the change
 passes or it honestly reports that it could not.
 
-> **Status:** P0 / v0 in progress — see [`docs/SPEC.md`](docs/SPEC.md) for the
-> full design and phase plan. The planning scaffold is in place; the code is being
-> built skeleton-first (executor + orchestrator loop before individual agents).
-
 ---
 
 ## The five agents
@@ -29,89 +25,158 @@ The hierarchy is built in: the orchestrator is the eldest brother the others obe
 
 ## How it works
 
-1. **You** point pandavas at a local repo, describe the task, optionally set a
-   test command, and run it.
-2. **Nakula (Research)** finds the relevant code and returns an anchored brief:
-   file + line ranges + snippets + acceptance criteria + conventions + pitfalls.
-   Every anchor is checked to resolve to real lines before anything proceeds.
-3. **Arjuna (Worker)** re-reads the real code at those anchors. For a bug with no
-   covering test, it first writes a **failing test that reproduces the bug**, then
-   fixes until that test goes **red → green**.
-4. **Bhima (Test)** runs the suite, confirms red → green and no regressions, and
-   reports objective pass/fail.
-5. **Sahadeva (Judge)** reviews the diff and test results against the acceptance
-   criteria with fresh context, checks the generated test isn't vacuous, and
-   approves or rejects with specific feedback.
-6. **Yudhishthira (Orchestrator)** decides: done, or retry with the judge's
-   feedback — converging on tests as the objective signal, with oscillation
-   detection and a hard cap.
-
-**You get back:** a branch/diff with the change, a new regression test, and a full
-run trace. If it can't converge, you get the best attempt — labeled honestly —
-with the remaining failures surfaced.
+1. **Research** explores the repo and returns an *anchored brief* — file + line
+   ranges + snippets + acceptance criteria. Every anchor is checked to resolve to
+   real lines (a resolve gate) before anything proceeds.
+2. **Worker** re-reads the real code at those anchors and writes complete-file
+   changes; for a bug with no covering test it adds a reproduction test first.
+3. **Test run** is deterministic and **regression-aware**: it compares against a
+   baseline run and only accepts a change that introduces **no new failures** (a
+   previously-passing test that now fails is rejected).
+4. **Judge** is an independent LLM that reviews the cumulative diff and the *true*
+   test state against the acceptance criteria, and checks any generated test isn't
+   vacuous — approving, or rejecting with specific feedback.
+5. **Loop:** the orchestrator retries with the judge's feedback, with
+   **oscillation detection** (it breaks early if it keeps repeating itself) and a
+   **hard iteration cap**. At the cap it restores the **best attempt** seen and
+   reports `did not converge` honestly.
 
 ---
 
-## Quick start
+## Install
 
-> TODO — populated once P0 code lands. Anticipated shape:
+Requires **Python 3.10+**.
 
 ```bash
-# 1. Clone and install
 git clone https://github.com/<you>/pandavas.git
 cd pandavas
-pip install -r requirements.txt
-
-# 2. Add your own API keys
-cp .env.example .env
-#   then edit .env with your keys
-
-# 3. Run a task against a local repo
-python -m pandavas run \
-  --repo /path/to/your/local/repo \
-  --task "Bug: app crashes on empty form submit; should show a validation error" \
-  --test-command "pytest"     # optional; auto-detected if omitted
+pip install -e .
 ```
+
+`pip install -e .` installs the dependencies (`langgraph`, `openai`,
+`python-dotenv`, `pydantic`) and makes the `pandavas` package importable and
+runnable as `python -m pandavas`.
 
 ---
 
 ## Configuration
 
-- pandavas uses **your own** API keys — copy `.env.example` to `.env` and fill in
-  your keys. The real `.env` is gitignored and is never committed.
-- Runs on **free inference tiers** by design (zero-budget). Model and provider are
-  configurable.
+pandavas uses **your own** API keys. Copy the template and fill it in:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env`:
+
+- **`PANDAVAS_LLM_PROVIDER`** — which provider the LLM client uses. Valid values:
+  `groq`, `openrouter`, `gemini`, `openai`.
+- **The matching provider key** — set the one for your provider:
+  `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `GEMINI_API_KEY`, or `OPENAI_API_KEY`.
+- **The three model env vars** — pin an exact model id for each agent:
+  - `PANDAVAS_RESEARCH_MODEL`
+  - `PANDAVAS_WORKER_MODEL`
+  - `PANDAVAS_JUDGE_MODEL`
+
+**Finding valid model ids.** Pin exact ids — never `"latest"`. Query your
+provider's models endpoint to see what is currently available. For Groq:
+
+```bash
+curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"
+```
+
+Suggested starting points (verify they are current against the endpoint above
+before relying on them):
+
+- `PANDAVAS_RESEARCH_MODEL=openai/gpt-oss-20b`
+- `PANDAVAS_WORKER_MODEL=openai/gpt-oss-120b`
+- `PANDAVAS_JUDGE_MODEL=openai/gpt-oss-20b`
+
+The real `.env` is gitignored and is **never committed** — only `.env.example`
+lives in the repo.
 
 ---
 
-## Project structure
+## Usage
+
+```bash
+python -m pandavas run --repo <path> --task "<description>" [options]
+```
+
+Flags for the `run` subcommand:
+
+| Flag               | Required | Description                                                            |
+|--------------------|----------|------------------------------------------------------------------------|
+| `--repo`           | yes      | Path to a local repository you already have working.                   |
+| `--task`           | yes      | Natural-language description of the bug or feature.                    |
+| `--test-command`   | no       | Override the auto-detected test command (e.g. `"pytest"`).             |
+| `--max-iterations` | no       | Hard cap on retry iterations (default: `6`).                           |
+| `--offline`        | no       | Use stub agents (no LLM, no API key) to verify the install/wiring. The real executor still runs the tests. |
+| `--report`         | no       | Path to write a JSON run report (summary + token usage + trace).       |
+| `--trace`          | no       | Path to write the full per-iteration JSON trace.                       |
+| `--junit-xml`      | no       | Path to a JUnit XML file your test command emits — enables per-test rigor for non-pytest frameworks (jest-junit, gotestsum, etc.). Relative paths resolve under `--repo`. |
+| `--branch`         | no       | Branch name to commit a converged change to (default: auto from task). |
+| `--no-git`         | no       | Do not create a git branch/commit on a converged change.               |
+
+**Exit codes:** `0` if the run converged, `1` otherwise.
+
+**On a converged run** (real, non-`--offline`) in a git repo, pandavas commits the
+change to a new branch (named from the task, or `--branch`) so you get a reviewable
+branch/diff. Use `--no-git` to skip. The report also prints cumulative token usage
+and, where applicable, the tests that went **red→green**.
+
+**`--offline`** runs the loop with placeholder agents and no LLM calls, so it
+needs no API key. Use it right after install to confirm everything is wired up —
+the real test executor still runs against your repo.
+
+```bash
+python -m pandavas run --repo . --task "smoke test" --offline
+```
+
+Example report:
 
 ```
-pandavas/
-├── README.md                   this file
-├── CLAUDE.md                   operating rulebook (scope lock + house rules)
-├── .env.example                copy to .env and add your keys
-├── .gitignore
-├── docs/
-│   ├── SPEC.md                 source of truth — full design + phase plan
-│   └── HANDOVER.template.md    long-session baton (copy → fill → delete)
-└── src/                        TODO — P0 code (executor + orchestrator loop)
+pandavas - run report
+repo:    /path/to/your/repo
+task:    Fix add() returning the wrong result
+status:  converged
+iterations: 2
+
+change diff:
+--- a/calc.py
++++ b/calc.py
+@@ -1,2 +1,2 @@
+ def add(a, b):
+-    return a - b
++    return a + b
 ```
+
+If it cannot converge, the report shows `status:  did_not_converge`, a `reason:`
+(`cap` or `oscillation`), and the best attempt's iteration. Pass `--report
+run.json` to also capture the full machine-readable trace.
 
 ---
 
-## Scope & non-goals
+## Limitations & non-goals
 
-pandavas works on a repo you **already have running locally** — it does not
-reconstruct arbitrary environments from scratch. It is **not** a deterministic
-compiler (output varies run to run; only the test+judge gate is the contract),
-**not** a general CI service, and it does **not** guarantee a fix exists for every
-task — it reports honest failure rather than faking success. Full list in
-[`docs/SPEC.md`](docs/SPEC.md) §11.
+- **Output is non-deterministic.** The guarantee is *"produces a change that
+  passes the gate, or reports that it could not"* — not byte-identical output run
+  to run.
+- **At the iteration cap it returns the best attempt**, restored on disk and
+  labeled `did not converge`, with remaining failures surfaced. It never presents
+  a failing result as success.
+- **Per-test regression rigor is pytest-native**; other frameworks get it by
+  emitting JUnit XML and pointing pandavas at it with `--junit-xml`. Without
+  parseable per-test results it falls back to exit-code-only pass/fail.
+- **It runs on a repo you already have working locally** and does not reconstruct
+  arbitrary environments from scratch — it relies on your local setup.
+- **It needs your own API key**, and each real (non-`--offline`) run costs tokens.
+- **Not a deterministic compiler, not a general CI service, and no guarantee a fix
+  exists** for every task — it reports honest failure rather than faking success.
+  One local repo per run. Full list in [`docs/SPEC.md`](docs/SPEC.md) §11.
 
 ---
 
 ## License
 
-TODO — choose a license before making the repo public (MIT is the common default
-for clone-and-use OSS tooling).
+MIT — see [`LICENSE`](LICENSE).
