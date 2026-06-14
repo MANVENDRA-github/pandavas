@@ -16,13 +16,15 @@ FIXTURE = REPO_ROOT / "tests" / "fixtures" / "sample_buggy_repo"
 
 
 def scripted_worker(state):
-    """Demo worker: fix calc.py by replacing 'a - b' with 'a + b'."""
-    i = state.get("iteration", 0) + 1
+    """Demo worker: fix calc.py by replacing 'a - b' with 'a + b'.
+
+    Iteration bookkeeping lives in the orchestrator now, so the worker only edits.
+    """
     calc_path = Path(state["repo_path"]) / "calc.py"
     source = calc_path.read_text(encoding="utf-8")
     source = source.replace("a - b", "a + b")
     calc_path.write_text(source, encoding="utf-8")
-    return {"iteration": i}
+    return {}
 
 
 def main() -> None:
