@@ -5,7 +5,7 @@ import os
 import shutil
 
 from pandavas.executor import LocalExecutor
-from pandavas.nodes import nakula_research
+from pandavas.nodes import nakula_research, sahadeva_judge
 from pandavas.orchestrator import run
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "sample_buggy_repo")
@@ -40,9 +40,13 @@ def test_red_to_green_end_to_end(tmp_path):
         repo_path=tmp_repo,
         worker=scripted_worker,
         research=nakula_research,
+        judge=sahadeva_judge,
     )
 
     # Step 3 (GREEN): the fix converged on the first iteration.
     assert final["status"] == "converged"
     assert final["last_test_result"].passed is True
     assert final["iteration"] == 1
+    # The change diff was captured.
+    assert final["last_diff"]
+    assert "calc.py" in final["last_diff"]
