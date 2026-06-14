@@ -1,0 +1,38 @@
+# --- Secrets (critical: never commit) ---
+.env
+*.env
+!.env.example
+
+# --- Ephemeral session baton ---
+HANDOVER.md
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Claude Code / tooling ---
+MEMORY.md
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Run artifacts (traces, scratch repos) ---
+runs/
+traces/
+*.log
