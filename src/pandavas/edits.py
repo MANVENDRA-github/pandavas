@@ -51,3 +51,35 @@ def apply_edits(repo_path: str, edits: list[dict]) -> tuple[list[str], list[str]
         written.append(rel_path)
 
     return written, rejected
+
+
+def delete_files(repo_path: str, rel_paths: list[str]) -> tuple[list[str], list[str]]:
+    """Delete repo-relative files, rejecting any that escape the repo.
+
+    Used by restore-to-best to remove files created in a worse iteration that are
+    not part of the best snapshot. Missing files are treated as already-deleted.
+
+    Args:
+        repo_path: Repository root.
+        rel_paths: Repo-relative paths to delete.
+
+    Returns:
+        (deleted, rejected): paths removed, and paths rejected for escaping.
+    """
+    deleted: list[str] = []
+    rejected: list[str] = []
+
+    for rel_path in rel_paths:
+        if not is_within_repo(repo_path, rel_path):
+            rejected.append(rel_path)
+            continue
+        abs_path = os.path.join(repo_path, rel_path)
+        try:
+            os.remove(abs_path)
+            deleted.append(rel_path)
+        except FileNotFoundError:
+            deleted.append(rel_path)  # already gone -> goal satisfied
+        except OSError:
+            rejected.append(rel_path)
+
+    return deleted, rejected
