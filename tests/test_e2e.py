@@ -5,21 +5,24 @@ import os
 import shutil
 
 from pandavas.executor import LocalExecutor
+from pandavas.nodes import nakula_research
 from pandavas.orchestrator import run
 
 FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "sample_buggy_repo")
 
 
 def scripted_worker(state):
-    """Demo worker: fix the bug in calc.py by replacing 'a - b' with 'a + b'."""
-    i = state.get("iteration", 0) + 1
+    """Demo worker: fix the bug in calc.py by replacing 'a - b' with 'a + b'.
+
+    Iteration bookkeeping lives in the orchestrator now, so the worker only edits.
+    """
     calc_path = os.path.join(state["repo_path"], "calc.py")
     with open(calc_path, "r", encoding="utf-8") as f:
         source = f.read()
     source = source.replace("a - b", "a + b")
     with open(calc_path, "w", encoding="utf-8") as f:
         f.write(source)
-    return {"iteration": i}
+    return {}
 
 
 def test_red_to_green_end_to_end(tmp_path):
@@ -32,7 +35,12 @@ def test_red_to_green_end_to_end(tmp_path):
     assert red.passed is False
 
     # Step 2: run the loop with the scripted file-editing worker (real executor).
-    final = run(task="fix add", repo_path=tmp_repo, worker=scripted_worker)
+    final = run(
+        task="fix add",
+        repo_path=tmp_repo,
+        worker=scripted_worker,
+        research=nakula_research,
+    )
 
     # Step 3 (GREEN): the fix converged on the first iteration.
     assert final["status"] == "converged"
