@@ -25,5 +25,6 @@ class RunState(TypedDict):
     test_passed: Optional[bool]
     judge_approved: Optional[bool]
     judge_feedback: Optional[str]
-    status: str  # "running" | "converged" | "did_not_converge"
+    status: str  # "running" | "converged" | "did_not_converge" | "research_failed"
+    research_error: Optional[str]  # set when research fails to produce a valid brief
     trace: list  # list of per-iteration dicts
