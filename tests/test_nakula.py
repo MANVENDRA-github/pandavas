@@ -5,7 +5,7 @@ import os
 
 from pandavas.brief import ResearchBrief, resolve_brief
 from pandavas.executor import Executor, TestResult
-from pandavas.nodes import arjuna_worker, make_nakula_research
+from pandavas.nodes import arjuna_worker, make_nakula_research, sahadeva_judge
 from pandavas.orchestrator import run
 
 FIXTURE = os.path.join(
@@ -134,6 +134,7 @@ def test_nakula_integration_converges_in_graph(monkeypatch):
         executor=FakeExecutor(passed=True),
         research=make_nakula_research(llm),
         worker=arjuna_worker,
+        judge=sahadeva_judge,
     )
 
     assert final["status"] == "converged"
