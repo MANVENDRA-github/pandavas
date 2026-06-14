@@ -5,7 +5,7 @@ import os
 import shutil
 
 from pandavas.executor import LocalExecutor
-from pandavas.nodes import make_arjuna_worker, make_nakula_research
+from pandavas.nodes import make_arjuna_worker, make_nakula_research, sahadeva_judge
 from pandavas.orchestrator import run
 
 FIXTURE = os.path.join(
@@ -136,8 +136,11 @@ def test_capstone_real_nakula_arjuna_executor_flip_red_to_green(tmp_path, monkey
         executor=LocalExecutor(),
         research=make_nakula_research(research_llm),
         worker=make_arjuna_worker(worker_llm),
+        judge=sahadeva_judge,
     )
 
     assert final["status"] == "converged"
     assert final["last_test_result"].passed is True
     assert final["iteration"] == 1
+    assert final["last_diff"]
+    assert "calc.py" in final["last_diff"]
