@@ -1,0 +1,2 @@
+pytest
+langgraph>=0.2
