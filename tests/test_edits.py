@@ -2,7 +2,7 @@
 
 import os
 
-from pandavas.edits import apply_edits, is_within_repo
+from pandavas.edits import apply_edits, delete_files, is_within_repo
 
 
 def test_write_new_top_level_file(tmp_path):
@@ -52,3 +52,31 @@ def test_is_within_repo(tmp_path):
     repo = str(tmp_path)
     assert is_within_repo(repo, "a/b.py") is True
     assert is_within_repo(repo, "../x") is False
+
+
+def test_delete_files_removes_existing(tmp_path):
+    (tmp_path / "gone.py").write_text("x\n", encoding="utf-8")
+
+    deleted, rejected = delete_files(str(tmp_path), ["gone.py"])
+
+    assert deleted == ["gone.py"]
+    assert rejected == []
+    assert not (tmp_path / "gone.py").exists()
+
+
+def test_delete_files_missing_is_idempotent(tmp_path):
+    deleted, rejected = delete_files(str(tmp_path), ["never.py"])
+    assert deleted == ["never.py"]  # already absent -> goal satisfied
+    assert rejected == []
+
+
+def test_delete_files_rejects_traversal(tmp_path):
+    outside = tmp_path.parent / "keep.py"
+    outside.write_text("keep\n", encoding="utf-8")
+    try:
+        deleted, rejected = delete_files(str(tmp_path), ["../keep.py"])
+        assert deleted == []
+        assert rejected == ["../keep.py"]
+        assert outside.exists()  # untouched
+    finally:
+        outside.unlink()
