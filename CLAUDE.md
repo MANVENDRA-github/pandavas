@@ -37,37 +37,28 @@ an agent.
 - **P1 is COMPLETE:** real **Nakula** (research + anchored typed brief +
   deterministic resolve gate), real **Arjuna** (worker + path-safe edits), and a
   real verification loop end-to-end. The **Judge (Sahadeva) is still a stub.**
-- **Active phase: P2.** In scope, and nothing beyond it:
-  - **Real Bhima rigor:** baseline test run, **red→green** confirmation for the
-    reproduction test, and **regression detection** (a previously-passing test
-    that now fails is rejected). Per-test result parsing is **pytest-first** (via
-    JUnit XML); non-pytest commands fall back to **exit-code-only**.
-    (Multi-framework per-test parsing stays P3.)
-  - **Real Sahadeva judge:** replace the stub with an LLM that reviews the change
-    diff + test results against `acceptance_criteria`, validates that any
-    agent-written test is **non-vacuous** (adequacy / anti-gaming), and returns
-    **approve** OR **reject with specific, actionable feedback tied to anchors**.
-  - **Convergence control:** oscillation detection (the same test fails twice
-    after a "fix," or the diff churns the same lines → break early) and
-    **best-attempt tracking** so the cap returns the best result, labeled
-    honestly.
-- **P3 stays LOCKED:** reproducibility hardening, multi-framework / multi-language
-  per-test parsing, CLI/UX polish, and client setup docs.
-- **Do not implement P3 features** unless the user explicitly says "lift the
-  scope lock." If a task seems to require P3 work, **stop and ask** — do not
-  quietly expand scope.
+- **P2 is COMPLETE:** real **Sahadeva** judge (diff + results vs
+  acceptance_criteria, adequacy check, anchored feedback), **regression-aware
+  Bhima** (baseline run, pytest-first JUnit XML, exit-code fallback),
+  **oscillation detection**, and **best-attempt restore** at the cap.
+- **P3 is COMPLETE** (scope lock lifted by explicit instruction):
+  - **CLI/UX**: run report, offline wiring check, JSON report + per-iteration
+    trace, clean error handling, token-usage reporting.
+  - **Client docs**: README + LICENSE.
+  - **Git delivery**: a converged change is committed to a new branch.
+  - **Per-test rigor for any framework** via `--junit-xml` (universal JUnit XML);
+    pytest auto-captured.
+  - **Red→green surfacing** (`newly_passing`), **restore deletion-handling**
+    (strays removed on restore), **LLM retry/backoff**, **CI** (GitHub Actions).
+- **Quality posture:** keep the suite green (`python -m pytest`), keep CLI stdout
+  ASCII-only (Windows-first), no hardcoded paths, real `.env` never committed.
 
-## Build order (non-negotiable)
+## Possible future work (ask before starting)
 
-> Deterministic gate before the stochastic part. Prove before polish.
-
-1. **Diff capture** — deterministically capture the change diff for the judge.
-2. **Real Sahadeva judge** — diff + test results vs acceptance_criteria,
-   adequacy check, approve / reject-with-anchored-feedback.
-3. **Bhima per-test rigor** — baseline, red→green, regression detection
-   (pytest-first via JUnit XML; exit-code-only fallback).
-4. **Oscillation + best-attempt-at-cap** — break early on churn/repeats; return
-   the best attempt, labeled honestly.
+- Deeper reproducibility hardening (persisted run manifests, seed pinning).
+- Pre-fix RED isolation (run a new repro test against original code to prove it
+  was genuinely red before the fix, beyond the baseline-vs-final signal).
+- Multi-repo / batch runs; richer cost controls.
 
 Do not start by polishing agent prompts. Prove each piece end-to-end before
 moving to the next.
