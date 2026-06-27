@@ -93,6 +93,15 @@ moving to the next.
 
 ## Learned Rules
 
-> Accumulate project-specific conventions here as they're discovered. Empty for now.
+> Accumulate project-specific conventions here as they're discovered.
 
--
+- **Skill mode is additive (keyless `/pandavas`).** The host harness's model
+  (Claude Code / Cursor) plays the LLM agents while deterministic CLI verbs in
+  `src/pandavas/spine.py` (`baseline`, `resolve-brief`, `run-tests`, `judge-gate`,
+  `decide`, `restore`, `commit`, ...) own every gate. The verbs reuse `run`'s logic
+  (`nodes.make_bhima_test` / `_better` / `_restore_snapshot`) and pass state through a
+  gitignored `.pandavas/` dir; `decide` is the sole writer of `loop.json`. The
+  standalone `python -m pandavas run` path and the six deterministic modules are
+  unchanged. Packaging (`commands/`, `skills/`, `agents/`, `scripts/install-*`) is
+  top-level and excluded from the wheel (pyproject packages `src/` only). Keep verb
+  stdout ASCII-only (`json.dumps(..., ensure_ascii=True)`). Design: `docs/SKILL_MODE.md`.

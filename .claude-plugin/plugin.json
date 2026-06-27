@@ -1,0 +1,8 @@
+{
+  "name": "pandavas",
+  "description": "Autonomous, test-gated multi-agent code resolution: a /pandavas command + skill where the host model plays the research/worker/judge agents and deterministic Python verbs rule on whether the code is correct.",
+  "version": "0.1.0",
+  "author": { "name": "pandavas", "email": "noreply@example.com" },
+  "license": "MIT",
+  "keywords": ["multi-agent", "coding-agent", "tdd", "test-gated", "orchestration", "claude-code", "cursor"]
+}

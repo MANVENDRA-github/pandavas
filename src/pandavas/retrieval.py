@@ -13,6 +13,7 @@ import re
 
 IGNORE_DIRS = {
     ".git",
+    ".pandavas",  # pandavas skill-mode working/state dir (never repo content)
     "node_modules",
     "__pycache__",
     ".venv",

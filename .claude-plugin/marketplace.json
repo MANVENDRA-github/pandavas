@@ -1,0 +1,14 @@
+{
+  "name": "local-skills",
+  "description": "Local development marketplace for the pandavas skill",
+  "owner": { "name": "pandavas", "email": "noreply@example.com" },
+  "plugins": [
+    {
+      "name": "pandavas",
+      "description": "Autonomous, test-gated multi-agent code resolution where deterministic verbs rule on correctness.",
+      "version": "0.1.0",
+      "source": "./",
+      "author": { "name": "pandavas", "email": "noreply@example.com" }
+    }
+  ]
+}

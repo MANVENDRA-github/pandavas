@@ -14,7 +14,7 @@ import json
 import sys
 from typing import Optional, Sequence
 
-from . import gitutils, nodes, orchestrator
+from . import gitutils, nodes, orchestrator, spine
 from .executor import LocalExecutor
 from .llm import LLMClient
 
@@ -71,6 +71,9 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not create a git branch/commit on a converged change.",
     )
+
+    # Keyless deterministic verbs for skill mode (baseline, run-tests, decide, ...).
+    spine.add_subparsers(sub)
     return parser
 
 
@@ -142,6 +145,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     """CLI entrypoint. Returns 0 if the run converged, else 1."""
     parser = _build_parser()
     args = parser.parse_args(argv)
+
+    # Skill-mode verbs are deterministic and self-contained; dispatch them before
+    # any run-specific argument is touched. The `run` path below is unchanged.
+    if args.command != "run":
+        return spine.dispatch(args)
 
     executor = LocalExecutor(junit_xml=args.junit_xml)
     run_kwargs = {
