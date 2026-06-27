@@ -1,0 +1,10 @@
+{
+  "name": "pandavas",
+  "displayName": "Pandavas",
+  "description": "Autonomous, test-gated multi-agent code resolution where deterministic verbs rule on correctness. (Cursor has no subagent primitive, so the judge runs as a fresh-pass self-review; the deterministic gates are identical to Claude Code.)",
+  "version": "0.1.0",
+  "author": { "name": "pandavas", "email": "noreply@example.com" },
+  "license": "MIT",
+  "keywords": ["multi-agent", "coding-agent", "tdd", "test-gated", "orchestration", "cursor"],
+  "skills": "./skills/"
+}

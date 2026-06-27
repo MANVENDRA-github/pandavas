@@ -1,0 +1,15 @@
+# Install the pandavas skill into Cursor (run from the repo root).
+$dest = Join-Path $HOME ".cursor"
+New-Item -ItemType Directory -Force -Path "$dest\commands","$dest\skills" | Out-Null
+Copy-Item -Recurse -Force commands\* "$dest\commands\"
+Copy-Item -Recurse -Force skills\*   "$dest\skills\"
+Write-Host "Installed the pandavas skill into Cursor -> $dest"
+Write-Host ""
+Write-Host "Note: Cursor has no subagent primitive, so the judge (Sahadeva) runs as a"
+Write-Host "fresh-pass self-review in shared context - weaker independence than Claude"
+Write-Host "Code's subagent. The deterministic gates (run-tests, judge-gate, decide) are"
+Write-Host "identical on both harnesses. For strict judge isolation use Claude Code, or"
+Write-Host "run the standalone engine:  python -m pandavas run --repo . --task '...'"
+Write-Host ""
+Write-Host "Also install the engine:  pip install -e .   (so 'python -m pandavas' works)"
+Write-Host "Then in Cursor, in any repo, type:  /pandavas . <task>"

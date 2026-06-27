@@ -176,17 +176,46 @@ no API key:
 python examples/demo.py
 ```
 
+## Skill mode (keyless, in-editor)
+
+pandavas also runs **without an API key**, as a `/pandavas` command inside a coding
+harness (Claude Code, Cursor). The harness's own model plays the three LLM agents;
+deterministic `python -m pandavas` verbs play the test runner and the orchestrator, so
+the same regression-aware gate still rules on correctness. You get the in-editor
+ergonomics; the engine keeps the guarantees.
+
+Install the engine plus the skill, then use it in any repo whose test suite runs:
+
+```bash
+pip install -e .                 # so `python -m pandavas` works
+bash scripts/install-claude.sh   # Claude Code   (or scripts/install-claude.ps1)
+bash scripts/install-cursor.sh   # Cursor        (or scripts/install-cursor.ps1)
+```
+
+```
+/pandavas . Fix the off-by-one in paginate()
+```
+
+The host model researches into an anchored brief (resolve-gated) and writes the change;
+the verbs decide: `run-tests` (exit 0 only if no new failures vs baseline), `judge-gate`,
+then `decide` (converge / retry / stop). On Claude Code the judge runs as a genuine
+fresh-context subagent; on Cursor it degrades to a fresh-pass self-review (the
+deterministic gates are identical). One honest caveat: skill mode can't *structurally*
+force the gates the way `run` does — the model must call them and obey their exit codes
+— so `python -m pandavas run` stays the hard-determinism path. Full design:
+[`docs/SKILL_MODE.md`](docs/SKILL_MODE.md).
+
 ## Tests
 
 ```bash
 python -m pytest
 ```
 
-93 tests cover the deterministic core directly: the executor and test-command
+121 tests cover the deterministic core directly: the executor and test-command
 detection, the JUnit parser, the resolve gate, the path-safe edit applier,
 snapshot and diffing, the regression and red→green logic, oscillation and
-best-attempt restore, the git helpers, the CLI, and an end-to-end red→green run on
-the fixture. 92 run offline and pass; one is a live-API smoke test that runs only
+best-attempt restore, the git helpers, the CLI, the keyless verb spine and a skill-mode end-to-end run, and an end-to-end red→green run on
+the fixture. 120 run offline and pass; one is a live-API smoke test that runs only
 when `GROQ_API_KEY` is set. CI runs the suite on Python 3.10, 3.11, and 3.12.
 
 ## Tech stack

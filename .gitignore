@@ -36,3 +36,6 @@ Thumbs.db
 runs/
 traces/
 *.log
+
+# --- Skill-mode working/state dir ---
+.pandavas/
