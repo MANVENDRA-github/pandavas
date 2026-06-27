@@ -9,6 +9,10 @@ description = "An autonomous multi-agent system that resolves a coding task on a
 requires-python = ">=3.10"
 dependencies = ["langgraph>=0.2", "openai>=1.0", "python-dotenv>=1.0", "pydantic>=2"]
 
+[project.optional-dependencies]
+# Test/dev tooling. CI installs this: `pip install -e ".[dev]"`.
+dev = ["pytest>=7"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
