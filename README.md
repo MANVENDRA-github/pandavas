@@ -10,6 +10,10 @@ The name comes from the five Pandava brothers of the Mahabharata. Each agent is
 mapped to the brother whose strongest trait fits the job, which also fixes the
 hierarchy for free: the orchestrator is the eldest brother the others answer to.
 
+Two ways to run it: **standalone** (`python -m pandavas run`, your own API key) or
+**keyless** as a `/pandavas` command inside Claude Code / Cursor, where the host
+harness's model plays the agents. See [Skill mode](#skill-mode-keyless-in-editor).
+
 ## The core idea
 
 LLM coding agents fail in a predictable way. The agent summarizes the code, the
@@ -95,7 +99,8 @@ That installs the runtime dependencies (`langgraph`, `openai`, `pydantic`,
 
 ## Configuration
 
-pandavas uses your own API keys and is built to run on free inference tiers. Copy
+**Standalone mode** uses your own API keys and is built to run on free inference
+tiers. (Skill mode needs no key — see [Skill mode](#skill-mode-keyless-in-editor).) Copy
 the template:
 
 ```bash
@@ -234,7 +239,10 @@ The system is complete end to end: the deterministic executor, three real LLM
 agents (research, worker, judge), the non-LLM test runner, and the state-machine
 orchestrator are wired into the convergence loop, with regression-aware testing, a
 CLI that does JSON reporting and token accounting, git delivery of a converged
-change, and CI. What it deliberately does not do:
+change, and CI. It also runs **keyless** as a `/pandavas` skill in Claude Code and
+Cursor — the host harness's model plays the agents while the deterministic verbs gate
+correctness (see [Skill mode](#skill-mode-keyless-in-editor)). What it deliberately
+does not do:
 
 - **Output isn't deterministic.** The contract is moved from generation to
   acceptance: *produces a change that passes the gate, or reports that it could

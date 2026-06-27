@@ -50,6 +50,11 @@ an agent.
     pytest auto-captured.
   - **Red→green surfacing** (`newly_passing`), **restore deletion-handling**
     (strays removed on restore), **LLM retry/backoff**, **CI** (GitHub Actions).
+- **P4 is COMPLETE** (keyless skill mode): the deterministic core is exposed as CLI
+  verbs (`src/pandavas/spine.py`) and a `/pandavas` command + skill ships for Claude
+  Code and Cursor, so the system runs with no API key on the host harness's model.
+  Strictly additive; the `run` path is unchanged. See `docs/SKILL_MODE.md` and
+  `docs/SPEC.md` §12.
 - **Quality posture:** keep the suite green (`python -m pytest`), keep CLI stdout
   ASCII-only (Windows-first), no hardcoded paths, real `.env` never committed.
 

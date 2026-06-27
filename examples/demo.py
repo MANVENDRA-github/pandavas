@@ -1,7 +1,7 @@
 """Standalone demo: a real red -> green fix on the sample fixture.
 
 Run with `python examples/demo.py`. The worker here is a scripted demo (it
-hardcodes the fix), NOT a real agent — the real worker arrives in P1.
+hardcodes the fix), NOT a real agent — the real LLM worker (Arjuna) runs in standalone `pandavas run` and in skill mode.
 """
 
 import shutil
