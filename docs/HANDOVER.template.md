@@ -35,5 +35,5 @@
 
 ## Scope reminder
 
-- Active phase: **P0 / v0** unless the user has explicitly lifted the scope lock
-  (see `CLAUDE.md`). Do not drift into P1+ work.
+- Check `CLAUDE.md` for the live scope state. As of this writing P0–P3 and P4 (skill
+  mode) are complete; confirm there before assuming anything is in or out of scope.

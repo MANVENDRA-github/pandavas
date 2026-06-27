@@ -19,6 +19,12 @@ and loops until the change passes or it honestly reports that it could not.
 The name maps the five agents to the five Pandava brothers (see §3). The hierarchy
 is encoded for free: the orchestrator is the eldest brother the others obey.
 
+**Two ways to run it (see §12).** *Standalone* — `python -m pandavas run`, a LangGraph
+orchestrator driven by pandavas's own LLM client and API key (the CI-able reference).
+*Skill mode* — a keyless `/pandavas` command inside a coding harness (Claude Code,
+Cursor) where the host harness's model plays the LLM agents and deterministic CLI
+verbs own the gates. Both modes share one deterministic core.
+
 **What pandavas is not** — see §11 Non-Goals. Read that section before assuming a
 capability.
 
@@ -45,6 +51,10 @@ capability.
 - **If it could not converge:** the best attempt produced, clearly labeled
   `did not converge`, with the remaining failures surfaced for the user to
   finish. It is never presented as success.
+
+In **skill mode (§12)** the same loop runs, but the host harness's model performs the
+Research / Worker / Judge steps while the orchestrator's deterministic decisions are
+CLI verbs the host calls via the shell.
 
 ---
 
@@ -234,7 +244,8 @@ to *acceptance* — the correct contract for an autonomous coding agent.
 - **Budget:** zero. Free inference tiers (e.g. Groq / Gemini free tiers);
   optional OpenRouter for model choice. The **client supplies their own API keys**
   via `.env`. Ship `.env.example` only; gitignore the real `.env`; **no hardcoded
-  machine paths** (no `D:\...`, no `C:\Users\...`).
+  machine paths** (no `D:\...`, no `C:\Users\...`). In **skill mode (§12) there is no
+  API key at all** — inference runs on the host harness's own model.
 - **Dev environment:** Windows.
 - **Delivery:** public repo; the client clones it and runs with their own keys.
 - **Scope:** repositories the user already has locally.
@@ -243,8 +254,8 @@ to *acceptance* — the correct contract for an autonomous coding agent.
 
 ## 10. Phase Plan
 
-> **P0 is the ONLY currently in-scope phase.** Do not implement P1–P3 until the
-> scope lock in `CLAUDE.md` is explicitly lifted.
+> **Status: P0–P3 and P4 (skill mode) are COMPLETE.** The phase plan below is kept as
+> the historical roadmap; `CLAUDE.md` holds the live scope state.
 
 - **P0 / v0 (IN SCOPE)** — Skeleton first, muscle later.
   - Deterministic **executor**: detect + run the local test command, capture
@@ -260,6 +271,10 @@ to *acceptance* — the correct contract for an autonomous coding agent.
   full convergence / oscillation / cap logic.
 - **P3** — Reproducibility hardening, no-tests robustness, multi-language
   detection, CLI/UX, client setup docs.
+- **P4 — Skill mode (keyless).** Expose the deterministic core as CLI verbs and ship a
+  `/pandavas` command + skill for Claude Code and Cursor, so the system runs with no
+  API key on the host harness's model. Strictly additive — the standalone `run` path
+  is unchanged. Full design in §12.
 
 ---
 
@@ -273,3 +288,57 @@ to *acceptance* — the correct contract for an autonomous coding agent.
 - **Does not guarantee a fix exists** for every task — it reports honest failure
   rather than faking success.
 - **Not a multi-repo / org-wide tool** — one local repo per run.
+
+---
+
+## 12. Skill Mode (keyless, in-editor)
+
+An **additive** second way to run the system, with **no API key**: a `/pandavas`
+command installed into a coding harness (Claude Code, Cursor). It does not replace
+standalone `run`; both share the same deterministic core, and `run` stays the CI-able
+hard-determinism reference. Operational detail lives in [`SKILL_MODE.md`](SKILL_MODE.md);
+this section records the design decision.
+
+### 12.1 The split across the process boundary
+
+A subprocess cannot borrow the harness's model, so skill mode does not run the agents
+as a subprocess. The work is split instead:
+
+- **The host harness's model owns the LLM-shaped steps** — Nakula (research), Arjuna
+  (worker), Sahadeva (the judge's reasoning).
+- **The deterministic decisions stay in pandavas's Python**, exposed as LLM-free CLI
+  verbs the host calls via the shell: the resolve gate, the regression-aware test
+  verdict (Bhima), oscillation, the iteration cap, best-attempt restore, and git
+  delivery (Yudhishthira's control logic).
+
+The model is the hands and eyes; the verbs are the rules. The verbs reuse the exact
+functions `run` is CI-tested against, so a fix delivered in skill mode is gated by the
+same regression-aware logic.
+
+### 12.2 Verbs and state
+
+Verbs (`src/pandavas/spine.py`): `baseline`, `resolve-brief`, `run-tests`,
+`judge-gate`, `decide`, `diff`, `restore`, `commit`, `apply-edits`. Each prints one
+ASCII JSON line and sets a process exit code the host branches on (0 ok / converged,
+10 continue, 20 stop, 30 judge auto-reject, 1 error). State persists between the
+stateless verb calls in a gitignored `.pandavas/` directory under the target repo;
+`decide` is the sole writer of the loop state and recomputes diffs / signatures from
+snapshots, so a fabricated model diff cannot game the loop.
+
+### 12.3 Fresh-context judge, per harness
+
+Behind the deterministic `judge-gate`, **Claude Code** spawns a `pandavas-judge`
+**subagent** with only the acceptance criteria, the cumulative diff, and the
+still-failing tests — genuine fresh context (§3.5). **Cursor** has no equal subagent
+primitive, so the judge degrades to a fresh-pass self-review in shared context
+(honestly weaker). The deterministic gates are identical on both harnesses.
+
+### 12.4 Honest limitation — soft vs. hard determinism
+
+In standalone `run`, the process calls Yudhishthira unconditionally; the gates cannot
+be skipped. In skill mode the host model must *choose* to call the verbs and *obey*
+their exit codes — it cannot be structurally forced. Mitigations: the skill's Iron Law
+and mandatory procedure, a proof step that pastes real exit codes, `commit` gated
+behind `decide` exit 0 plus human approval, and `decide` recomputing from snapshots.
+**`python -m pandavas run` remains the hard-determinism contract; `/pandavas` is the
+keyless ergonomic path.**

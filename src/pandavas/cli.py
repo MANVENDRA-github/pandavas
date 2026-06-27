@@ -1,7 +1,8 @@
 """Command-line entrypoint for pandavas.
 
-Exposes a single `run` subcommand that drives the orchestrator loop and prints an
-ASCII-only run report (Windows-first). With --offline the stub research/worker/
+Exposes the `run` subcommand that drives the standalone orchestrator loop and prints
+an ASCII-only run report (Windows-first), plus the keyless skill-mode verbs wired in
+from `spine.py` (`baseline`, `run-tests`, `decide`, ...; see `docs/SKILL_MODE.md`). With --offline the stub research/worker/
 judge nodes are injected so no LLM (and no API key) is needed -- useful for an
 install/wiring check; the real executor still runs the tests. On a converged real
 run it can also commit the change to a new git branch.
